@@ -1,0 +1,27 @@
+{
+  "name": "facebook4j",
+  "version": "0.0.0",
+  "description": "maps user's friend networks into neo4j",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hortinstein/facebook4j.git"
+  },
+  "keywords": [
+    "neo4j"
+  ],
+  "author": "hortinstein",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hortinstein/facebook4j/issues"
+  },
+  "homepage": "https://github.com/hortinstein/facebook4j",
+  "dependencies": {
+    "fbgraph": "^0.2.10",
+    "neo4j": "^1.1.0",
+    "should": "^4.0.4"
+  }
+}
