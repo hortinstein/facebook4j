@@ -20,8 +20,12 @@
   },
   "homepage": "https://github.com/hortinstein/facebook4j",
   "dependencies": {
+    "express": "^4.4.4",
+    "facebook-cli": "0.0.1",
     "fbgraph": "^0.2.10",
     "neo4j": "^1.1.0",
+    "passport": "^0.2.0",
+    "passport-facebook": "^1.0.3",
     "should": "^4.0.4"
   }
 }
