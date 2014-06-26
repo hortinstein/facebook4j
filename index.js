@@ -1,3 +1,6 @@
+//https://github.com/jaredhanson/passport-facebook/tree/master/examples/login 
+//rewrote using jade
+
 var neo4j = require('neo4j');
 var fbgraph = require('fbgraph');
 
@@ -9,13 +12,13 @@ var express = require('express');
 //passport middleware
 var passport = require('passport');
 var FacebookStrategy = require('passport-facebook');
-
+var cookieParser = require('cookie-parser');
 //setting up local variables
 var confModule = require('./config.js');
 var config = new confModule;
 var FACEBOOK_APP_ID = config.facebook_app_id;
 var FACEBOOK_APP_SECRET = config.facebook_app_secret;
-var FACEBOOK_APP_CALLBACK_URL = config.facebook_callback_url;\
+var FACEBOOK_APP_CALLBACK_URL = config.facebook_callback_url;
 
 //functions where users data is stored
 passport.serializeUser(function(user, done) {
@@ -32,7 +35,7 @@ passport.deserializeUser(function(obj, done) {
 passport.use(new FacebookStrategy({
         clientID: FACEBOOK_APP_ID,
         clientSecret: FACEBOOK_APP_SECRET,
-        callbackURL: facebook_callback_url
+        callbackURL: FACEBOOK_APP_CALLBACK_URL
     },
     function(accessToken, refreshToken, profile, done) {
         process.nextTick(function() {
@@ -44,57 +47,64 @@ passport.use(new FacebookStrategy({
 
 var app = express();
 
-app.configure(function() {
-    app.set('views', __dirname + '/views');
-    app.set('view engine', 'ejs');
-    app.use(express.logger());
-    app.use(express.cookieParser());
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
-    app.use(express.session({
-        secret: 'keyboard cat'
-    }));
-    // Initialize Passport!  Also use passport.session() middleware, to support
-    // persistent login sessions (recommended).
-    app.use(passport.initialize());
-    app.use(passport.session());
-    app.use(app.router);
-    app.use(express.static(__dirname + '/public'));
-})
+//app .configure was depreciated
+//http: //stackoverflow.com/questions/22202232/express-has-no-method-configure-error
 
-app.get('/', function(req, res) {
+app.set('views', __dirname + '/views');
+app.set('view engine', 'jade');
+//app.use(express.logger());
+app.use(cookieParser());
+//app.use(express.bodyParser());
+//app.use(express.methodOverride());
+// app.use(express.session({
+//     secret: 'keyboard cat'
+// }));
+// Initialize Passport!  Also use passport.session() middleware, to support
+// persistent login sessions (recommended).
+app.use(passport.initialize());
+app.use(passport.session());
+
+var router = express.Router();
+app.use(express.static(__dirname + '/public'));
+
+
+router.get('/', function(req, res) {
     res.render('index', {
-        user: req.user
+        user: req.user,
+        tester: {
+            test: 'kekeke protester'
+        }
     });
 });
 
-app.get('/account', ensureAuthenticated, function(req, res) {
+router.get('/account', ensureAuthenticated, function(req, res) {
     res.render('account', {
         user: req.user
     });
 });
 
-app.get('/login', ensureAuthenticated, function(req, res) {
+router.get('/login', function(req, res) {
     res.render('login', {
         user: req.user
     });
 });
 
 
-app.get('/auth/facebook', passport.authenticate('facebook'), function(req, res) {
+router.get('/auth/facebook', passport.authenticate('facebook'), function(req, res) {
     // body...
 });
-app.get('/auth/facebook/callback', passport.authenticate('facebook', {
+
+router.get('/auth/facebook/callback', passport.authenticate('facebook', {
     failureRedirect: '/login'
 }), function(req, res) {
     res.redirect('/');
 });
-
+app.use('/', router);
 app.listen(3000);
 
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
-        return :next();
-    }
-    res.redirect('/login')
+        return next();
+    } else
+        res.redirect('/login')
 }
