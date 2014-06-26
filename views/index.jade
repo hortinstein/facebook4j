@@ -1,0 +1,10 @@
+extends layout
+block head
+
+block content
+	h1 index test
+
+	if !user 
+		p Welcome, please login
+	else 
+		p Hello #{user.username}

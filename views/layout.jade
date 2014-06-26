@@ -1,0 +1,17 @@
+doctype html
+html(lang="en")
+	head
+		title Facebook Login
+		block head
+	body
+		if user
+			p logged in test
+			a(href="/") Home
+			a(href="/login") Login
+		else 
+			p not logged in 
+			a(href='/') Home 
+			a(href='/account') Account 
+			a(href='/logout') Logout 
+		#content
+			block content
