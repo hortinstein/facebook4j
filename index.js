@@ -1,6 +1,6 @@
 //https://github.com/jaredhanson/passport-facebook/tree/master/examples/login 
 //rewrote using jade
-
+//http://flippinawesome.org/2014/06/23/using-node-js-in-production/?utm_source=nodeweekly&utm_medium=email
 var neo4j = require('neo4j');
 var fbgraph = require('fbgraph');
 
@@ -13,6 +13,9 @@ var express = require('express');
 var passport = require('passport');
 var FacebookStrategy = require('passport-facebook');
 var cookieParser = require('cookie-parser');
+var session = require('express-session');
+var bodyParser = require('body-parser');
+var methodOverride = require('method-override');
 //setting up local variables
 var confModule = require('./config.js');
 var config = new confModule;
@@ -22,12 +25,12 @@ var FACEBOOK_APP_CALLBACK_URL = config.facebook_callback_url;
 
 //functions where users data is stored
 passport.serializeUser(function(user, done) {
-    console.log(user);
+    console.log('login:' + user);
     done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
-    console.log(obj);
+    console.log('logout:' + obj);
     done(null, obj);
 });
 
@@ -38,9 +41,8 @@ passport.use(new FacebookStrategy({
         callbackURL: FACEBOOK_APP_CALLBACK_URL
     },
     function(accessToken, refreshToken, profile, done) {
-        process.nextTick(function() {
-            return done(null, profile);
-        });
+        done(null, profile);
+
     }
 
 ));
@@ -54,26 +56,28 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 //app.use(express.logger());
 app.use(cookieParser());
-//app.use(express.bodyParser());
-//app.use(express.methodOverride());
-// app.use(express.session({
-//     secret: 'keyboard cat'
-// }));
+app.use(session({
+    secret: process.env.EXPRESS_SECRET,
+    key: 'sid',
+    cookie: {
+        secure: false
+    },
+}));
 // Initialize Passport!  Also use passport.session() middleware, to support
 // persistent login sessions (recommended).
 app.use(passport.initialize());
 app.use(passport.session());
+
+app.use(bodyParser.json());
 
 var router = express.Router();
 app.use(express.static(__dirname + '/public'));
 
 
 router.get('/', function(req, res) {
+    console.log(req.user)
     res.render('index', {
-        user: req.user,
-        tester: {
-            test: 'kekeke protester'
-        }
+        user: req.user
     });
 });
 
@@ -89,6 +93,12 @@ router.get('/login', function(req, res) {
     });
 });
 
+
+router.get('/logout', function(req, res) {
+    res.render('index', {
+        user: req.user
+    });
+});
 
 router.get('/auth/facebook', passport.authenticate('facebook'), function(req, res) {
     // body...
