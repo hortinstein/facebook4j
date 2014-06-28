@@ -2,7 +2,7 @@
 //rewrote using jade
 //http://flippinawesome.org/2014/06/23/using-node-js-in-production/?utm_source=nodeweekly&utm_medium=email
 var neo4j = require('neo4j');
-var fbgraph = require('fbgraph');
+var graph = require('fbgraph');
 
 //for serving the login strategy
 var express = require('express');
@@ -10,6 +10,7 @@ var express = require('express');
 //
 
 //passport middleware
+var async = require('async');
 var passport = require('passport');
 var FacebookStrategy = require('passport-facebook');
 var cookieParser = require('cookie-parser');
@@ -17,6 +18,7 @@ var session = require('express-session');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
 var expressValidator = require('express-validator');
+var _ = require('lodash');
 //setting up local variables
 var confModule = require('./config.js');
 var config = new confModule;
@@ -40,6 +42,7 @@ passport.use(new FacebookStrategy({
         callbackURL: FACEBOOK_APP_CALLBACK_URL
     },
     function(accessToken, refreshToken, profile, done) {
+        profile.accessToken = accessToken;
         return done(null, profile);
 
     }
@@ -80,9 +83,30 @@ router.get('/', function(req, res) {
 });
 
 router.get('/account', ensureAuthenticated, function(req, res) {
-    res.render('account', {
-        user: req.user
-    });
+    console.log(req.user)
+    graph.setAccessToken(req.user.accessToken);
+    async.parallel({
+            getMe: function(done) {
+                graph.get(req.user.facebook, function(err, me) {
+                    done(err, me);
+                });
+            },
+            getMyFriends: function(done) {
+                graph.get(req.user.facebook + '/friends', function(err, friends) {
+                    done(err, friends.data);
+                });
+            }
+        },
+        function(err, results) {
+            //if (err) return next(err);
+            console.log('me', results);
+            console.log('friends', results.getMyFriends);
+            res.render('account', {
+                user: req.user,
+                me: results.getMe,
+                friends: results.getMyFriends
+            });
+        });
 });
 
 router.get('/login', function(req, res) {
@@ -93,6 +117,7 @@ router.get('/login', function(req, res) {
 
 
 router.get('/logout', function(req, res) {
+    req.logout();
     res.render('index', {
         user: req.user
     });
@@ -103,7 +128,8 @@ router.get('/auth/facebook', passport.authenticate('facebook'), function(req, re
 });
 
 router.get('/auth/facebook/callback', passport.authenticate('facebook', {
-    failureRedirect: '/login'
+    failureRedirect: '/login',
+    scope: ['friends']
 }), function(req, res) {
     res.redirect('/');
 });

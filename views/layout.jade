@@ -5,13 +5,12 @@ html(lang="en")
 		block head
 	body
 		if user
-			p logged in test
-			a(href="/") Home
-			a(href="/login") Login
-		else 
-			p not logged in 
-			a(href='/') Home 
-			a(href='/account') Account 
+			a(href="/") Home 
+			a(href="/account") Account 
 			a(href='/logout') Logout 
+		else 
+			a(href='/') Home  
+			a(href='/login') Login  
+			
 		#content
 			block content
