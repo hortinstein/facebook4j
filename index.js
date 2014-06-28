@@ -16,6 +16,7 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var bodyParser = require('body-parser');
 var methodOverride = require('method-override');
+var expressValidator = require('express-validator');
 //setting up local variables
 var confModule = require('./config.js');
 var config = new confModule;
@@ -25,12 +26,10 @@ var FACEBOOK_APP_CALLBACK_URL = config.facebook_callback_url;
 
 //functions where users data is stored
 passport.serializeUser(function(user, done) {
-    console.log('login:' + user);
     done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
-    console.log('logout:' + obj);
     done(null, obj);
 });
 
@@ -41,7 +40,7 @@ passport.use(new FacebookStrategy({
         callbackURL: FACEBOOK_APP_CALLBACK_URL
     },
     function(accessToken, refreshToken, profile, done) {
-        done(null, profile);
+        return done(null, profile);
 
     }
 
@@ -54,28 +53,27 @@ var app = express();
 
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
-//app.use(express.logger());
+app.use(bodyParser.json());
+app.use(expressValidator());
+app.use(methodOverride());
 app.use(cookieParser());
 app.use(session({
-    secret: process.env.EXPRESS_SECRET,
-    key: 'sid',
-    cookie: {
-        secure: false
-    },
+    secret: "secrets.sessionSecret"
 }));
-// Initialize Passport!  Also use passport.session() middleware, to support
-// persistent login sessions (recommended).
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(bodyParser.json());
+app.use(function(req, res, next) {
+    // Make user object available in templates.
+    res.locals.user = req.user;
+    next();
+});
 
 var router = express.Router();
 app.use(express.static(__dirname + '/public'));
 
 
 router.get('/', function(req, res) {
-    console.log(req.user)
     res.render('index', {
         user: req.user
     });
@@ -101,7 +99,7 @@ router.get('/logout', function(req, res) {
 });
 
 router.get('/auth/facebook', passport.authenticate('facebook'), function(req, res) {
-    // body...
+
 });
 
 router.get('/auth/facebook/callback', passport.authenticate('facebook', {
